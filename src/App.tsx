@@ -7,7 +7,7 @@ import { CHEFS, WINE_TYPES, WINE_STYLES } from './constants';
 import { Chef, Recipe, Wine as WineType, Cocktail, AppState, BartenderState, Tab } from './types';
 
 // Hardcoded API key for prototype as requested
-const API_KEY = "AIzaSyA-VLHj2UkvjMTLA3848Wgm9eqdOWgu998";
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
