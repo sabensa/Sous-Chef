@@ -85,7 +85,7 @@ export default function App() {
 
       console.log('Calling Gemini API for recipe using @google/genai...');
       const result = await ai.models.generateContent({
-        model: "gemini-1.5-flash", // תוקן כאן למודל יציב
+        model: "gemini-2.0-flash", // תוקן כאן למודל יציב
         contents: promptText,
         config: {
           responseMimeType: "application/json",
@@ -155,7 +155,7 @@ export default function App() {
 
       console.log('Calling Gemini API for drink using @google/genai...');
       const result = await ai.models.generateContent({
-        model: "gemini-1.5-flash", // תוקן כאן למודל יציב
+        model: "gemini-2.0-flash", // תוקן כאן למודל יציב
         contents: promptText
       });
       const text = result.text;
