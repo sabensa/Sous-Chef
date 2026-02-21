@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heebo: "Heebo", sans-serif;
+
+  --color-primary: hsl(14, 56%, 51%);
+  --color-primary-dark: hsl(14, 56%, 55%);
+  --color-bg-light: #fafafa;
+  --color-bg-dark: hsl(0, 0%, 7%);
+  --color-card-light: #ffffff;
+  --color-card-dark: hsl(0, 0%, 10%);
+  --color-border-light: #ebebeb;
+  --color-border-dark: hsl(0, 0%, 18%);
+  --color-text-light: #171717;
+  --color-text-dark: hsl(0, 0%, 95%);
+  --color-text-muted: hsl(0, 0%, 45%);
+
+  --radius-base: 1rem;
+  --radius-chef: 20px;
+  --radius-recipe: 24px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply bg-bg-light text-text-light transition-colors duration-300;
+  }
+
+  .dark body {
+    @apply bg-bg-dark text-text-dark;
+  }
+}
+
+@layer components {
+  .mobile-container {
+    @apply w-full max-w-[420px] mx-auto min-h-screen relative shadow-sm;
+  }
+
+  .markdown-content {
+    @apply space-y-4;
+  }
+
+  .markdown-content p {
+    @apply mb-4 leading-relaxed;
+  }
+
+  .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+    @apply font-bold text-zinc-900 dark:text-white;
+  }
+
+  .markdown-content ul, .markdown-content ol {
+    @apply mb-6 space-y-2;
+  }
+
+  .fade-up {
+    animation: fade-up 0.3s ease-out forwards;
+  }
+
+  .pulse-dot {
+    animation: pulse-dot 1.4s infinite;
+  }
+
+  .animate-simmer {
+    animation: simmer 0.8s ease-in-out infinite;
+  }
+
+  .animate-text-pulse {
+    animation: text-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes simmer {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-6px) rotate(-3deg); }
+  50% { transform: translateY(0) rotate(3deg); }
+  75% { transform: translateY(-3px) rotate(-1deg); }
+}
+
+@keyframes text-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.98); }
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="ltr"] {
+  text-align: left;
+}
