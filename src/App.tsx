@@ -5,6 +5,9 @@ import Markdown from 'react-markdown';
 import { CHEFS, WINE_TYPES, WINE_STYLES } from './constants';
 import { Chef, Recipe, Wine as WineType, Cocktail, AppState, BartenderState, Tab } from './types';
 
+// Pulling safely from Vercel env
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
   return (
     <div 
@@ -14,18 +17,6 @@ const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
       <span className="text-4xl">{chef.emoji}</span>
     </div>
   );
-};
-
-// הפונקציה החדשה שלנו שמדברת עם השרת שבנית עכשיו
-const fetchAI = async (prompt: string, isJson: boolean = false) => {
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, isJson })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Server Error');
-  return data.text;
 };
 
 export default function App() {
@@ -90,9 +81,27 @@ export default function App() {
         "recipeContentHebrew": "The full recipe in Hebrew (Markdown)"
       }`;
 
-      console.log('Calling Backend API for recipe...');
-      const responseText = await fetchAI(promptText, true);
-      const data = JSON.parse(responseText || "{}");
+      // Native fetch approach to bypass buggy Google SDK
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: promptText }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      const jsonRes = await response.json();
+      
+      if (!response.ok) {
+        if (jsonRes.error?.message?.includes("limit: 0")) {
+          throw new Error("גוגל חסמו את מפתח ה-API הזה (Quota Limit 0). חובה לייצר מפתח חדש ממשתמש Gmail פרטי לגמרי (לא של מוסד לימודים).");
+        }
+        throw new Error(jsonRes.error?.message || 'שגיאת שרת מול גוגל');
+      }
+
+      const textOutput = jsonRes.candidates[0].content.parts[0].text;
+      const data = JSON.parse(textOutput || "{}");
       
       if (data.recipeContentHebrew === "סליחה, השף שלנו לא זיהה את המצרכים האלו. נסה שוב עם מצרכים אמיתיים.") {
         setRecipe(data.recipeContentHebrew);
@@ -100,8 +109,8 @@ export default function App() {
         return;
       }
 
-      console.log('Generating image for:', data.dishNameEnglish);
-      const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(data.dishNameEnglish + " high quality professional food photography")}?width=1080&height=1080&model=flux&nologo=true`;
+      // Fast, free image generation via Pollinations
+      const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(data.dishNameEnglish + " professional food photography, high resolution, gourmet")}?width=1080&height=1080&model=flux&nologo=true`;
 
       setRecipeImageBase64(imageUrl);
       setRecipe(data.recipeContentHebrew);
@@ -143,11 +152,20 @@ export default function App() {
         promptText = `Act as an expert Mixologist. Create EXACTLY ONE specific cocktail recipe${barInventory ? ' using these ingredients: ' + barInventory : ''}. ${contextStr} DO NOT provide a list of options. Format: Name of the cocktail in bold, followed by ingredients and instructions. IMPORTANT: Write strictly in ${language === 'he' ? 'Hebrew' : 'English'}.`;
       }
 
-      console.log('Calling Backend API for drink...');
-      const responseText = await fetchAI(promptText, false);
-      
-      console.log('API Response received:', responseText);
-      setDrinkResult(responseText);
+      // Native fetch approach
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: promptText }] }]
+        })
+      });
+
+      const jsonRes = await response.json();
+      if (!response.ok) throw new Error(jsonRes.error?.message || "API Error");
+
+      const text = jsonRes.candidates[0].content.parts[0].text;
+      setDrinkResult(text);
       setBartenderState('result');
     } catch (err: any) {
       console.error("Drink generation error:", err);
