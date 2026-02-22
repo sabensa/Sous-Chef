@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Wine, GlassWater, Sun, Moon, Clock, Info, RefreshCw, Check, ChevronDown, ChevronLeft, Thermometer, X, Utensils, Cake, Soup, Flame, Fish, Leaf } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 import Markdown from 'react-markdown';
 import { CHEFS, WINE_TYPES, WINE_STYLES } from './constants';
 import { Chef, Recipe, Wine as WineType, Cocktail, AppState, BartenderState, Tab } from './types';
-
-// Hardcoded API key for prototype as requested
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
   return (
@@ -19,6 +14,18 @@ const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
       <span className="text-4xl">{chef.emoji}</span>
     </div>
   );
+};
+
+// הפונקציה החדשה שלנו שמדברת עם השרת שבנית עכשיו
+const fetchAI = async (prompt: string, isJson: boolean = false) => {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, isJson })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Server Error');
+  return data.text;
 };
 
 export default function App() {
@@ -83,24 +90,9 @@ export default function App() {
         "recipeContentHebrew": "The full recipe in Hebrew (Markdown)"
       }`;
 
-      console.log('Calling Gemini API for recipe using @google/genai...');
-      const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash", // תוקן כאן למודל יציב
-        contents: promptText,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              dishNameEnglish: { type: Type.STRING },
-              recipeContentHebrew: { type: Type.STRING }
-            },
-            required: ["dishNameEnglish", "recipeContentHebrew"]
-          }
-        }
-      });
-      
-      const data = JSON.parse(result.text || "{}");
+      console.log('Calling Backend API for recipe...');
+      const responseText = await fetchAI(promptText, true);
+      const data = JSON.parse(responseText || "{}");
       
       if (data.recipeContentHebrew === "סליחה, השף שלנו לא זיהה את המצרכים האלו. נסה שוב עם מצרכים אמיתיים.") {
         setRecipe(data.recipeContentHebrew);
@@ -109,10 +101,8 @@ export default function App() {
       }
 
       console.log('Generating image for:', data.dishNameEnglish);
-      
-      // תוקן כאן: שימוש ב-URL חינמי ויציב כדי למנוע את השגיאות שרת והמכסה של גוגל
       const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(data.dishNameEnglish + " high quality professional food photography")}?width=1080&height=1080&model=flux&nologo=true`;
-      
+
       setRecipeImageBase64(imageUrl);
       setRecipe(data.recipeContentHebrew);
       setAppState('result');
@@ -153,15 +143,11 @@ export default function App() {
         promptText = `Act as an expert Mixologist. Create EXACTLY ONE specific cocktail recipe${barInventory ? ' using these ingredients: ' + barInventory : ''}. ${contextStr} DO NOT provide a list of options. Format: Name of the cocktail in bold, followed by ingredients and instructions. IMPORTANT: Write strictly in ${language === 'he' ? 'Hebrew' : 'English'}.`;
       }
 
-      console.log('Calling Gemini API for drink using @google/genai...');
-      const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash", // תוקן כאן למודל יציב
-        contents: promptText
-      });
-      const text = result.text;
+      console.log('Calling Backend API for drink...');
+      const responseText = await fetchAI(promptText, false);
       
-      console.log('API Response received:', text);
-      setDrinkResult(text);
+      console.log('API Response received:', responseText);
+      setDrinkResult(responseText);
       setBartenderState('result');
     } catch (err: any) {
       console.error("Drink generation error:", err);
@@ -501,7 +487,6 @@ function RecipeDisplay({ recipe, imageBase64, onPairDrink, onAnotherRecipe, onRe
           {imageBase64 && (
             <div className="relative h-64 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
               <img 
-                // תוקן כאן: המערכת תדע לזהות אם זו תמונה רגילה (URL) או תמונת שרת (base64)
                 src={imageBase64.startsWith('http') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`} 
                 alt="Dish"
                 className="w-full h-full object-cover"
