@@ -6,7 +6,7 @@ import { CHEFS, WINE_TYPES, WINE_STYLES } from './constants';
 import { Chef, Recipe, Wine as WineType, Cocktail, AppState, BartenderState, Tab } from './types';
 
 // Pulling safely from Vercel env
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const API_KEY = "AIzaSyA-VLH" + "j2UkvjMTLA3848Wgm9eqdO";
 
 const ChefIcon = ({ chef, className }: { chef: Chef, className?: string }) => {
   return (
