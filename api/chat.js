@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const config = req.body.isJson ? { responseMimeType: "application/json" } : {};
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash", // <-- התיקון כאן!
       contents: req.body.prompt,
       config: config
     });
